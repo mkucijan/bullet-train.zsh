@@ -24,6 +24,7 @@ if [ ! -n "${BULLETTRAIN_PROMPT_ORDER+1}" ]; then
     context
     dir
     screen
+    jx
     perl
     ruby
     virtualenv
@@ -148,7 +149,18 @@ if [ ! -n "${BULLETTRAIN_RUST_FG+1}" ]; then
   BULLETTRAIN_RUST_FG=white
 fi
 if [ ! -n "${BULLETTRAIN_RUST_PREFIX+1}" ]; then
-  BULLETTRAIN_RUST_PREFIX="🦀"
+  BULLETTRAIN_RUST_PREFIX="\u2699"
+fi
+
+# Jenkinx Context
+if [ ! -n "${BULLETTRAIN_JX_BG+1}" ]; then
+  BULLETTRAIN_JX_BG=black
+fi
+if [ ! -n "${BULLETTRAIN_JX_FG+1}" ]; then
+  BULLETTRAIN_JX_FG=white
+fi
+if [ ! -n "${BULLETTRAIN_JX_PREFIX+1}" ]; then
+  BULLETTRAIN_JX_PREFIX="⎈"
 fi
 
 # Kubernetes Context
@@ -548,6 +560,10 @@ prompt_rust() {
       prompt_segment $BULLETTRAIN_RUST_BG $BULLETTRAIN_RUST_FG $BULLETTRAIN_RUST_PREFIX" $(rustc -V version | cut -d' ' -f2)"
     fi
   fi
+}
+
+prompt_jx() {
+  prompt_segment $BULLETTRAIN_JX_BG $BULLETTRAIN_JX_FG $BULLETTRAIN_JX_PREFIX" $(jx prompt)"
 }
 
 # Kubernetes Context
