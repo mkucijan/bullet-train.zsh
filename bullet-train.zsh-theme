@@ -16,15 +16,11 @@
 VIRTUAL_ENV_DISABLE_PROMPT=true
 
 # Define order and content of prompt
-if [ ! -n "${BULLETTRAIN_PROMPT_ORDER+1}" ]; then
-  BULLETTRAIN_PROMPT_ORDER=(
+if [ ! -n "${BULLETTRAIN_PROMPT_ORDER_FIRST+1}" ]; then
+  BULLETTRAIN_PROMPT_ORDER_FIRST=(
     time
-    status
-    custom
-    context
-    dir
-    screen
     jx
+    kctx
     perl
     ruby
     virtualenv
@@ -33,8 +29,19 @@ if [ ! -n "${BULLETTRAIN_PROMPT_ORDER+1}" ]; then
     go
     rust
     elixir
-    git
     hg
+  )
+fi
+
+# Define order and content of prompt
+if [ ! -n "${BULLETTRAIN_PROMPT_ORDER_SECOND+1}" ]; then
+  BULLETTRAIN_PROMPT_ORDER_SECOND=(
+    custom
+    status
+    context
+    dir
+    screen
+    git
     cmd_exec_time
   )
 fi
@@ -165,10 +172,10 @@ fi
 
 # Kubernetes Context
 if [ ! -n "${BULLETTRAIN_KCTX_BG+1}" ]; then
-  BULLETTRAIN_KCTX_BG=yellow
+  BULLETTRAIN_KCTX_BG=cyan
 fi
 if [ ! -n "${BULLETTRAIN_KCTX_FG+1}" ]; then
-  BULLETTRAIN_KCTX_FG=white
+  BULLETTRAIN_KCTX_FG="black"
 fi
 if [ ! -n "${BULLETTRAIN_KCTX_PREFIX+1}" ]; then
   BULLETTRAIN_KCTX_PREFIX="⎈"
@@ -573,7 +580,7 @@ prompt_kctx() {
   fi
   if command -v kubectl > /dev/null 2>&1; then
     if [[ -f $BULLETTRAIN_KCTX_KCONFIG ]]; then
-      prompt_segment $BULLETTRAIN_KCTX_BG $BULLETTRAIN_KCTX_FG $BULLETTRAIN_KCTX_PREFIX" $(cat $BULLETTRAIN_KCTX_KCONFIG|grep current-context| awk '{print $2}')"
+      prompt_segment $BULLETTRAIN_KCTX_BG $BULLETTRAIN_KCTX_FG $BULLETTRAIN_KCTX_PREFIX" $(kubectl config current-context)"
     fi  
   fi
 }
@@ -583,8 +590,6 @@ prompt_virtualenv() {
   local virtualenv_path="$VIRTUAL_ENV"
   if [[ -n $virtualenv_path && -n $VIRTUAL_ENV_DISABLE_PROMPT ]]; then
     prompt_segment $BULLETTRAIN_VIRTUALENV_BG $BULLETTRAIN_VIRTUALENV_FG $BULLETTRAIN_VIRTUALENV_PREFIX" $(basename $virtualenv_path)"
-  elif which pyenv &> /dev/null; then
-    prompt_segment $BULLETTRAIN_VIRTUALENV_BG $BULLETTRAIN_VIRTUALENV_FG $BULLETTRAIN_VIRTUALENV_PREFIX" $(pyenv version | sed -e 's/ (set.*$//' | tr '\n' ' ' | sed 's/.$//')"
   fi
 }
 
@@ -599,8 +604,10 @@ prompt_nvm() {
   else
     return
   fi
-  nvm_prompt=${nvm_prompt}
-  prompt_segment $BULLETTRAIN_NVM_BG $BULLETTRAIN_NVM_FG $BULLETTRAIN_NVM_PREFIX$nvm_prompt
+  if [[ (-f package.json ) ]]; then
+    nvm_prompt=${nvm_prompt}
+    prompt_segment $BULLETTRAIN_NVM_BG $BULLETTRAIN_NVM_FG $BULLETTRAIN_NVM_PREFIX$nvm_prompt
+  fi
 }
 
 #AWS Profile
@@ -680,9 +687,18 @@ prompt_line_sep() {
 # Entry point
 # ------------------------------------------------------------------------------
 
-build_prompt() {
+build_prompt_first() {
   RETVAL=$?
-  for segment in $BULLETTRAIN_PROMPT_ORDER
+  for segment in $BULLETTRAIN_PROMPT_ORDER_FIRST
+  do
+    prompt_$segment
+  done
+  prompt_end
+}
+
+build_prompt_second() {
+  RETVAL=$?
+  for segment in $BULLETTRAIN_PROMPT_ORDER_SECOND
   do
     prompt_$segment
   done
@@ -693,8 +709,11 @@ NEWLINE='
 '
 PROMPT=''
 [[ $BULLETTRAIN_PROMPT_ADD_NEWLINE == true ]] && PROMPT="$PROMPT$NEWLINE"
-PROMPT="$PROMPT"'%{%f%b%k%}$(build_prompt)'
+PROMPT="$PROMPT"'%{%f%b%k%}$(build_prompt_first)'
+[[ $BULLETTRAIN_PROMPT_ADD_NEWLINE == true ]] && PROMPT="$PROMPT$NEWLINE"
+PROMPT="$PROMPT"'%{%f%b%k%}$(build_prompt_second)'
 [[ $BULLETTRAIN_PROMPT_SEPARATE_LINE == true ]] && PROMPT="$PROMPT$NEWLINE"
 PROMPT="$PROMPT"'%{${fg_bold[default]}%}'
 [[ $BULLETTRAIN_PROMPT_SEPARATE_LINE == false ]] && PROMPT="$PROMPT "
 PROMPT="$PROMPT"'$(prompt_chars)%{$reset_color%}'
+
